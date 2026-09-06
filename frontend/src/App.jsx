@@ -1,7 +1,9 @@
 import { useState, useEffect } from "react";
 import axios from "axios";
 import "./App.css";
+
 import Inspection from "./Inspection";
+import InspectionHistory from "./InspectionHistory";
 
 function App() {
   const [email, setEmail] = useState("");
@@ -11,10 +13,16 @@ function App() {
     !!localStorage.getItem("access_token")
   );
 
-  const [currentInspection, setCurrentInspection] = useState(null);
+  const [currentInspection, setCurrentInspection] =
+    useState(null);
+
+  const [currentPage, setCurrentPage] =
+    useState("dashboard");
 
   const [message, setMessage] = useState("");
-  const [inspections, setInspections] = useState([]);
+
+  const [inspections, setInspections] =
+    useState([]);
 
   // =========================
   // LOGIN
@@ -123,10 +131,14 @@ function App() {
         response.data
       );
 
-      // Open the inspection page
-      setCurrentInspection(response.data.id);
+      // Open inspection page
+
+      setCurrentInspection(
+        response.data.id
+      );
 
       // Refresh inspection list
+
       loadInspections();
 
     } catch (error) {
@@ -149,6 +161,32 @@ function App() {
   };
 
   // =========================
+  // OPEN EXISTING INSPECTION
+  // =========================
+
+  const handleOpenInspection = (inspectionId) => {
+    setCurrentInspection(inspectionId);
+  };
+
+  // =========================
+  // OPEN HISTORY
+  // =========================
+
+  const handleOpenHistory = () => {
+    loadInspections();
+    setCurrentPage("history");
+  };
+
+  // =========================
+  // BACK TO DASHBOARD
+  // =========================
+
+  const handleBackToDashboard = () => {
+    setCurrentPage("dashboard");
+    loadInspections();
+  };
+
+  // =========================
   // LOGOUT
   // =========================
 
@@ -168,6 +206,7 @@ function App() {
     setLoggedIn(false);
     setCurrentInspection(null);
     setInspections([]);
+    setCurrentPage("dashboard");
   };
 
   // =========================
@@ -188,10 +227,35 @@ function App() {
     return (
       <Inspection
         inspectionId={currentInspection}
+
         onBack={() => {
           setCurrentInspection(null);
+          setCurrentPage("dashboard");
           loadInspections();
         }}
+      />
+    );
+  }
+
+  // =========================
+  // INSPECTION HISTORY
+  // =========================
+
+  if (
+    loggedIn &&
+    currentPage === "history"
+  ) {
+    return (
+      <InspectionHistory
+        inspections={inspections}
+
+        onOpenInspection={
+          handleOpenInspection
+        }
+
+        onBack={
+          handleBackToDashboard
+        }
       />
     );
   }
@@ -217,17 +281,37 @@ function App() {
             Legal Metrology
           </div>
 
-          <div className="nav-item">
+          {/* DASHBOARD */}
+
+          <div
+            className="nav-item active"
+            onClick={() =>
+              setCurrentPage("dashboard")
+            }
+            style={{ cursor: "pointer" }}
+          >
             Dashboard
           </div>
 
-          <div className="nav-item">
+          {/* INSPECTIONS */}
+
+          <div
+            className="nav-item"
+            onClick={
+              handleOpenHistory
+            }
+            style={{ cursor: "pointer" }}
+          >
             Inspections
           </div>
+
+          {/* REPORTS */}
 
           <div className="nav-item">
             Reports
           </div>
+
+          {/* LOGOUT */}
 
           <button
             className="logout"
@@ -247,6 +331,7 @@ function App() {
           <div className="header">
 
             <div>
+
               <h1>
                 Inspector Dashboard
               </h1>
@@ -254,6 +339,7 @@ function App() {
               <div className="welcome">
                 Welcome, {inspectorName}
               </div>
+
             </div>
 
           </div>
@@ -261,6 +347,8 @@ function App() {
           {/* STATISTICS */}
 
           <div className="cards">
+
+            {/* TOTAL */}
 
             <div className="card">
 
@@ -274,6 +362,8 @@ function App() {
 
             </div>
 
+            {/* PENDING */}
+
             <div className="card">
 
               <div className="card-title">
@@ -281,6 +371,7 @@ function App() {
               </div>
 
               <div className="card-number">
+
                 {
                   inspections.filter(
                     (inspection) =>
@@ -288,9 +379,12 @@ function App() {
                       "COMPLETED"
                   ).length
                 }
+
               </div>
 
             </div>
+
+            {/* COMPLETED */}
 
             <div className="card">
 
@@ -299,6 +393,7 @@ function App() {
               </div>
 
               <div className="card-number">
+
                 {
                   inspections.filter(
                     (inspection) =>
@@ -306,6 +401,7 @@ function App() {
                       "COMPLETED"
                   ).length
                 }
+
               </div>
 
             </div>
@@ -340,9 +436,29 @@ function App() {
 
           <div className="recent">
 
-            <h2>
-              Recent Inspections
-            </h2>
+            <div
+              style={{
+                display: "flex",
+                justifyContent:
+                  "space-between",
+                alignItems: "center",
+              }}
+            >
+
+              <h2>
+                Recent Inspections
+              </h2>
+
+              <button
+                className="primary-button"
+                onClick={
+                  handleOpenHistory
+                }
+              >
+                View All
+              </button>
+
+            </div>
 
             {inspections.length === 0 ? (
 
@@ -357,29 +473,51 @@ function App() {
             ) : (
 
               inspections
+                .slice()
+                .sort(
+                  (a, b) =>
+                    b.id - a.id
+                )
                 .slice(0, 5)
-                .map((inspection) => (
+                .map(
+                  (inspection) => (
 
-                  <div
-                    className="inspection-row"
-                    key={inspection.id}
-                  >
-
-                    <span>
-                      Inspection #
-                      {inspection.id}
-                    </span>
-
-                    <span className="status">
-                      {
-                        inspection.status ||
-                        "CREATED"
+                    <div
+                      className="inspection-row"
+                      key={
+                        inspection.id
                       }
-                    </span>
+                    >
 
-                  </div>
+                      <span>
+                        Inspection #
+                        {
+                          inspection.id
+                        }
+                      </span>
 
-                ))
+                      <span className="status">
+                        {
+                          inspection.status ||
+                          "CREATED"
+                        }
+                      </span>
+
+                      <button
+                        className="primary-button"
+                        onClick={() =>
+                          handleOpenInspection(
+                            inspection.id
+                          )
+                        }
+                      >
+                        Open
+                      </button>
+
+                    </div>
+
+                  )
+                )
 
             )}
 
