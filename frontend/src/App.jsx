@@ -4,6 +4,7 @@ import "./App.css";
 
 import Inspection from "./Inspection";
 import InspectionHistory from "./InspectionHistory";
+import Reports from "./Reports";
 
 function App() {
   const [email, setEmail] = useState("");
@@ -13,16 +14,13 @@ function App() {
     !!localStorage.getItem("access_token")
   );
 
-  const [currentInspection, setCurrentInspection] =
-    useState(null);
+  const [currentInspection, setCurrentInspection] = useState(null);
 
-  const [currentPage, setCurrentPage] =
-    useState("dashboard");
+  const [currentPage, setCurrentPage] = useState("dashboard");
 
   const [message, setMessage] = useState("");
 
-  const [inspections, setInspections] =
-    useState([]);
+  const [inspections, setInspections] = useState([]);
 
   // =========================
   // LOGIN
@@ -57,6 +55,7 @@ function App() {
 
       setLoggedIn(true);
       setMessage("");
+      setCurrentPage("dashboard");
 
     } catch (error) {
       console.error("Login error:", error);
@@ -131,13 +130,9 @@ function App() {
         response.data
       );
 
-      // Open inspection page
-
       setCurrentInspection(
         response.data.id
       );
-
-      // Refresh inspection list
 
       loadInspections();
 
@@ -169,12 +164,21 @@ function App() {
   };
 
   // =========================
-  // OPEN HISTORY
+  // OPEN INSPECTION HISTORY
   // =========================
 
   const handleOpenHistory = () => {
     loadInspections();
     setCurrentPage("history");
+  };
+
+  // =========================
+  // OPEN REPORTS
+  // =========================
+
+  const handleOpenReports = () => {
+    loadInspections();
+    setCurrentPage("reports");
   };
 
   // =========================
@@ -205,8 +209,8 @@ function App() {
 
     setLoggedIn(false);
     setCurrentInspection(null);
-    setInspections([]);
     setCurrentPage("dashboard");
+    setInspections([]);
   };
 
   // =========================
@@ -227,7 +231,6 @@ function App() {
     return (
       <Inspection
         inspectionId={currentInspection}
-
         onBack={() => {
           setCurrentInspection(null);
           setCurrentPage("dashboard");
@@ -248,11 +251,33 @@ function App() {
     return (
       <InspectionHistory
         inspections={inspections}
-
         onOpenInspection={
           handleOpenInspection
         }
+        onBack={
+          handleBackToDashboard
+        }
+      />
+    );
+  }
 
+  // =========================
+  // REPORTS
+  // =========================
+
+  if (
+    loggedIn &&
+    currentPage === "reports"
+  ) {
+    return (
+      <Reports
+        inspections={inspections}
+        onOpenInspection={
+          handleOpenInspection
+        }
+        onOpenHistory={
+          handleOpenHistory
+        }
         onBack={
           handleBackToDashboard
         }
@@ -269,6 +294,20 @@ function App() {
       localStorage.getItem(
         "inspector_name"
       );
+
+    const pendingCount =
+      inspections.filter(
+        (inspection) =>
+          inspection.status !==
+          "COMPLETED"
+      ).length;
+
+    const completedCount =
+      inspections.filter(
+        (inspection) =>
+          inspection.status ===
+          "COMPLETED"
+      ).length;
 
     return (
       <div className="app">
@@ -288,7 +327,9 @@ function App() {
             onClick={() =>
               setCurrentPage("dashboard")
             }
-            style={{ cursor: "pointer" }}
+            style={{
+              cursor: "pointer",
+            }}
           >
             Dashboard
           </div>
@@ -300,14 +341,24 @@ function App() {
             onClick={
               handleOpenHistory
             }
-            style={{ cursor: "pointer" }}
+            style={{
+              cursor: "pointer",
+            }}
           >
             Inspections
           </div>
 
           {/* REPORTS */}
 
-          <div className="nav-item">
+          <div
+            className="nav-item"
+            onClick={
+              handleOpenReports
+            }
+            style={{
+              cursor: "pointer",
+            }}
+          >
             Reports
           </div>
 
@@ -357,7 +408,9 @@ function App() {
               </div>
 
               <div className="card-number">
-                {inspections.length}
+                {
+                  inspections.length
+                }
               </div>
 
             </div>
@@ -371,15 +424,7 @@ function App() {
               </div>
 
               <div className="card-number">
-
-                {
-                  inspections.filter(
-                    (inspection) =>
-                      inspection.status !==
-                      "COMPLETED"
-                  ).length
-                }
-
+                {pendingCount}
               </div>
 
             </div>
@@ -393,15 +438,7 @@ function App() {
               </div>
 
               <div className="card-number">
-
-                {
-                  inspections.filter(
-                    (inspection) =>
-                      inspection.status ===
-                      "COMPLETED"
-                  ).length
-                }
-
+                {completedCount}
               </div>
 
             </div>
@@ -442,6 +479,7 @@ function App() {
                 justifyContent:
                   "space-between",
                 alignItems: "center",
+                marginBottom: "20px",
               }}
             >
 
@@ -487,6 +525,14 @@ function App() {
                       key={
                         inspection.id
                       }
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns:
+                          "1fr 1fr auto",
+                        gap: "20px",
+                        alignItems:
+                          "center",
+                      }}
                     >
 
                       <span>

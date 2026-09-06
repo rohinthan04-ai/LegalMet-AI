@@ -729,7 +729,6 @@ def create_report(
     inspector_id: int = Depends(verify_access_token),
     db: Session = Depends(get_db)
 ):
-
     inspection = db.query(Inspection).filter(
         Inspection.id == inspection_id,
         Inspection.inspector_id == inspector_id
@@ -741,9 +740,7 @@ def create_report(
             detail="Inspection not found"
         )
 
-    existing_report = db.query(
-        Report
-    ).filter(
+    existing_report = db.query(Report).filter(
         Report.inspection_id == inspection_id
     ).first()
 
@@ -754,7 +751,6 @@ def create_report(
         )
 
     try:
-
         report_data = generate_report_data(
             inspection_id,
             db
@@ -766,13 +762,19 @@ def create_report(
         )
 
         db.add(new_report)
+
+        # ==========================================
+        # MARK INSPECTION AS COMPLETED
+        # ==========================================
+
+        inspection.status = "COMPLETED"
+
         db.commit()
         db.refresh(new_report)
 
         return new_report
 
     except ValueError as exc:
-
         raise HTTPException(
             status_code=404,
             detail=str(exc)
